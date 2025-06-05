@@ -71,40 +71,40 @@ try:
         EC.presence_of_element_located((By.TAG_NAME, "tbody"))
     )
 
-    linhas = tbody.find_elements(By.TAG_NAME, "tr")
+    line_data_users = tbody.find_elements(By.TAG_NAME, "tr")
 
-    dados = []
-
-    for linha in linhas:
-        colunas = linha.find_elements(By.TAG_NAME, "td")
+    data_users = []
     
-    if len(colunas) >= 4:
-        # NOME: dentro de <a>
-        nome = colunas[1].find_element(By.TAG_NAME, "a").text
+    for line in line_data_users:
+        columns = line.find_elements(By.TAG_NAME, "td")
+    
+        if len(columns) >= 4:
+            # NOME: dentro de <a>
+            nome = columns[1].find_element(By.TAG_NAME, "a").text
+            
+            # E-MAIL: dentro de <span> no mesmo <td>
+            email = columns[1].find_element(By.TAG_NAME, "span").text
+            
+            # STATUS LOGIN: dentro de <span>
+            status_login = columns[5].find_element(By.TAG_NAME, "span").text
+            
+            # ÚLTIMO ACESSO: texto puro
+            ultimo_acesso = columns[6].text.strip()
+            
+            # VISTO ÚLTIMA VEZ: texto puro
+            visto_ultima_vez = columns[7].text.strip()
         
-        # E-MAIL: dentro de <span> no mesmo <td>
-        email = colunas[1].find_element(By.TAG_NAME, "span").text
-        
-        # STATUS LOGIN: dentro de <span>
-        status_login = colunas[5].find_element(By.TAG_NAME, "span").text
-        
-        # ÚLTIMO ACESSO: texto puro
-        ultimo_acesso = colunas[6].text.strip()
-        
-        # VISTO ÚLTIMA VEZ: texto puro
-        visto_ultima_vez = colunas[7].text.strip()
-        
-    dados.append({
-        'Nome': nome,
-        'E-mail': email,
-        'Status Login': status_login,
-        'Último Acesso': ultimo_acesso,
-        'Visto Última Vez': visto_ultima_vez
-    })
+        data_users.append({
+            'Nome': nome,
+            'E-mail': email,
+            'Status Login': status_login,
+            'Último Acesso': ultimo_acesso,
+            'Visto Última Vez': visto_ultima_vez
+        })
 
-    for itens in dados:
-        df = pd.DataFrame(dados)
-        df.to_excel('usuarios.xlsx', index=False)
+    df = pd.DataFrame(data_users)
+    
+    df.to_excel('usuarios.xlsx', index=False)
 
     print("Exportado com sucesso para 'usuarios.xlsx'")
 except WebDriverException as e:
