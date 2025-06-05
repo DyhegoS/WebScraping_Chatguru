@@ -1,5 +1,3 @@
-# type: ignore
-# Selenium - Automatizando tarefas no navegador
 import pandas as pd
 from pathlib import Path
 from time import sleep
@@ -44,7 +42,7 @@ def make_chrome_browser(*options: str) -> webdriver.Chrome:
 
 
 if __name__ == '__main__':
-    TIME_TO_WAIT = 500
+    TIME_TO_WAIT = 700
 
     options = '--disable-gpu',
     browser = make_chrome_browser(*options)
@@ -64,7 +62,7 @@ try:
 
     access_users.click()
 except:
-    print('link não de usuários encontrado')
+    print('link de usuários não encontrado')
 
 
 complete_sheet = []
@@ -106,18 +104,15 @@ try:
             'Visto Última Vez': visto_ultima_vez_users
         })
 
-    complete_sheet.extend(data_users)
 except WebDriverException as e:
     print("Erro ao coletar dados de usuário e gerar .xlsx")
     print(e)
 
     print("Stacktrace")
     traceback.print_exc()
-finally:
-    browser.quit()
 
 try:
-    access_chats = WebDriverWait(browser, 200).until(
+    access_chats = WebDriverWait(browser, 400).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/chats"]'))
     )
 
@@ -127,7 +122,7 @@ except:
 
 
 try:
-    tbody_chats = WebDriverWait(browser, 10).until(
+    tbody_chats = WebDriverWait(browser, 500).until(
         EC.presence_of_element_located((By.TAG_NAME, "tbody"))
     )
 
@@ -138,18 +133,21 @@ try:
 
     for lines in line_data_chats:
         column_chats = lines.find_elements(By.TAG_NAME, 'td')
-        name_chats = column_chats[1].text.strip()
-        total = column_chats[5].find_element(By.TAG_NAME, 'button')
+        if len(column_chats) >= 5:
+            name_chats = column_chats[1].text.strip()
+            total = column_chats[5].find_element(By.TAG_NAME, 'button').text
         
         total_chats.append({
+            'Nomes': name_chats,
             'Conversas Totais': total,
         })
 
-    # Acrescenta na lista geral
-    complete_sheet.extend(total_chats)
+    df = pd.DataFrame(data_users)
 
-    # ===> EXPORTAR PARA EXCEL
-    df = pd.DataFrame(complete_sheet)
+    total_chats = sorted(total_chats, key=lambda x: x['Nomes'])
+    totais = [item['Conversas Totais'] for item in total_chats]
+    
+    df['Totais'] = totais
     df.to_excel('dados_extraidos.xlsx', index=False)
 except WebDriverException as e:
     print("Erro ao coletar dados da conversa e gerar .xlsx")
