@@ -58,13 +58,17 @@ if __name__ == '__main__':
     password.send_keys(my_password)
     browser.find_element(By.CSS_SELECTOR, 'button.FormButton').click()
 try:
-    access_chats = WebDriverWait(browser, 200).until(
+    access_users = WebDriverWait(browser, 200).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/users"]'))
     )
 
-    access_chats.click()
+    access_users.click()
 except:
-    print('link não encontrado')
+    print('link não de usuários encontrado')
+
+
+complete_sheet = []
+
 try:
     # Espera o <tbody> carregar
     tbody = WebDriverWait(browser, 300).until(
@@ -76,39 +80,79 @@ try:
     data_users = []
     
     for line in line_data_users:
-        columns = line.find_elements(By.TAG_NAME, "td")
+        columns_users = line.find_elements(By.TAG_NAME, "td")
     
-        if len(columns) >= 4:
+        if len(columns_users) >= 4:
             # NOME: dentro de <a>
-            nome = columns[1].find_element(By.TAG_NAME, "a").text
+            name_users = columns_users[1].find_element(By.TAG_NAME, "a").text
             
             # E-MAIL: dentro de <span> no mesmo <td>
-            email = columns[1].find_element(By.TAG_NAME, "span").text
+            email_users = columns_users[1].find_element(By.TAG_NAME, "span").text
             
             # STATUS LOGIN: dentro de <span>
-            status_login = columns[5].find_element(By.TAG_NAME, "span").text
+            status_login_users = columns_users[5].find_element(By.TAG_NAME, "span").text
             
             # ÚLTIMO ACESSO: texto puro
-            ultimo_acesso = columns[6].text.strip()
+            ultimo_acesso_users = columns_users[6].text.strip()
             
             # VISTO ÚLTIMA VEZ: texto puro
-            visto_ultima_vez = columns[7].text.strip()
+            visto_ultima_vez_users = columns_users[7].text.strip()
         
         data_users.append({
-            'Nome': nome,
-            'E-mail': email,
-            'Status Login': status_login,
-            'Último Acesso': ultimo_acesso,
-            'Visto Última Vez': visto_ultima_vez
+            'Nome': name_users,
+            'E-mail': email_users,
+            'Status Login': status_login_users,
+            'Último Acesso': ultimo_acesso_users,
+            'Visto Última Vez': visto_ultima_vez_users
         })
 
-    df = pd.DataFrame(data_users)
-    
-    df.to_excel('usuarios.xlsx', index=False)
-
-    print("Exportado com sucesso para 'usuarios.xlsx'")
+    complete_sheet.extend(data_users)
 except WebDriverException as e:
-    print("Erro ao coletar table e gerar .xlsx")
+    print("Erro ao coletar dados de usuário e gerar .xlsx")
+    print(e)
+
+    print("Stacktrace")
+    traceback.print_exc()
+finally:
+    browser.quit()
+
+try:
+    access_chats = WebDriverWait(browser, 200).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/chats"]'))
+    )
+
+    access_chats.click()
+except:
+    print('link de chats não encontrado')
+
+
+try:
+    tbody_chats = WebDriverWait(browser, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "tbody"))
+    )
+
+    # pega dado de conversas totais
+    total_chats = []
+
+    line_data_chats = tbody_chats.find_elements(By.TAG_NAME, 'tr')
+
+    for lines in line_data_chats:
+        column_chats = lines.find_elements(By.TAG_NAME, 'td')
+        name_chats = column_chats[1].text.strip()
+        total = column_chats[5].find_element(By.TAG_NAME, 'button')
+        
+        total_chats.append({
+            'Conversas Totais': total,
+        })
+
+    # Acrescenta na lista geral
+    complete_sheet.extend(total_chats)
+
+    # ===> EXPORTAR PARA EXCEL
+    df = pd.DataFrame(complete_sheet)
+    df.to_excel('dados_extraidos.xlsx', index=False)
+except WebDriverException as e:
+    print("Erro ao coletar dados da conversa e gerar .xlsx")
     print(e)
 
     print("Stacktrace")
