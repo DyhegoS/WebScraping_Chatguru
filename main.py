@@ -1,15 +1,10 @@
 import pandas as pd
-from pathlib import Path
-from time import sleep
 import getpass
-
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
 import traceback
 
 
@@ -20,7 +15,7 @@ driver = webdriver.Chrome(options=option)
     
 
 driver.get('https://s17.chatguru.app/')
-TIME_TO_WAIT = 30
+
 
 login = driver.find_element(By.ID, 'email')
 password = driver.find_element(By.ID, 'password')
@@ -146,4 +141,3 @@ except WebDriverException as e:
     traceback.print_exc()
 finally:
     driver.quit()
-    sleep(TIME_TO_WAIT)
