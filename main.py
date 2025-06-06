@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.chrome.options import Options
 import traceback
 
 # Chrome Options
@@ -16,47 +17,24 @@ import traceback
 # Doc Selenium
 # https://selenium-python.readthedocs.io/locating-elements.html
 
+option = webdriver.ChromeOptions()
+option.add_argument(r"--user-data-dir=C:\Users\dyhego.silva\chrome-selenium-profile")
+option.add_argument(r'--profile-directory=Default')
+driver = webdriver.Chrome(options=option)
+    
 
-ROOT_FOLDER = Path(__file__).parent
-CHROME_DRIVER_PATH = ROOT_FOLDER / 'driver' / 'chromedriver.exe'
+driver.get('https://s17.chatguru.app/')
+TIME_TO_WAIT = 700
 
+login = driver.find_element(By.ID, 'email')
+password = driver.find_element(By.ID, 'password')
+login.send_keys('suporteti@7oliveiras.com.br')
+my_password = getpass.getpass()
+password.send_keys(my_password)
+driver.find_element(By.CSS_SELECTOR, 'button.FormButton').click()
 
-def make_chrome_browser(*options: str) -> webdriver.Chrome:
-    chrome_options = webdriver.ChromeOptions()
-
-    # chrome_options.add_argument('--headless')
-    if options is not None:
-        for option in options:
-            chrome_options.add_argument(option)
-
-    chrome_service = Service(
-        executable_path=str(CHROME_DRIVER_PATH),
-    )
-
-    browser = webdriver.Chrome(
-        service=chrome_service,
-        options=chrome_options
-    )
-
-    return browser
-
-
-if __name__ == '__main__':
-    TIME_TO_WAIT = 700
-
-    options = '--disable-gpu',
-    browser = make_chrome_browser(*options)
-
-    browser.get('https://s17.chatguru.app/')
-
-    login = browser.find_element(By.ID, 'email')
-    password = browser.find_element(By.ID, 'password')
-    login.send_keys('suporteti@7oliveiras.com.br')
-    my_password = getpass.getpass()
-    password.send_keys(my_password)
-    browser.find_element(By.CSS_SELECTOR, 'button.FormButton').click()
 try:
-    access_users = WebDriverWait(browser, 200).until(
+    access_users = WebDriverWait(driver, 400).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/users"]'))
     )
 
@@ -69,7 +47,7 @@ complete_sheet = []
 
 try:
     # Espera o <tbody> carregar
-    tbody = WebDriverWait(browser, 300).until(
+    tbody = WebDriverWait(driver, 400).until(
         EC.presence_of_element_located((By.TAG_NAME, "tbody"))
     )
 
@@ -104,6 +82,9 @@ try:
             'Visto Última Vez': visto_ultima_vez_users
         })
 
+    df = pd.DataFrame(data_users)
+    df.to_excel('relatorio_chatguru_beta.xlsx', index=False)
+
 except WebDriverException as e:
     print("Erro ao coletar dados de usuário e gerar .xlsx")
     print(e)
@@ -112,7 +93,7 @@ except WebDriverException as e:
     traceback.print_exc()
 
 try:
-    access_chats = WebDriverWait(browser, 400).until(
+    access_chats = WebDriverWait(driver, 400).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/chats"]'))
     )
 
@@ -122,11 +103,10 @@ except:
 
 
 try:
-    tbody_chats = WebDriverWait(browser, 500).until(
+    tbody_chats = WebDriverWait(driver, 500).until(
         EC.presence_of_element_located((By.TAG_NAME, "tbody"))
     )
 
-    # pega dado de conversas totais
     total_chats = []
 
     line_data_chats = tbody_chats.find_elements(By.TAG_NAME, 'tr')
@@ -141,14 +121,22 @@ try:
             'Nomes': name_chats,
             'Conversas Totais': total,
         })
-
-    df = pd.DataFrame(data_users)
+    
+    remove = ['Ninguém Delegado', 'Comercial-3', 'E-commerce', 'Financeiro', 'Logistica', 'Comercial-1', 
+              'Motoristas', 'Diretoria', 'Administrativo', 'Comercial-2', 'Compras']
+    total_chats = [x for x in total_chats if x['Nomes'] not in remove]
 
     total_chats = sorted(total_chats, key=lambda x: x['Nomes'])
     totais = [item['Conversas Totais'] for item in total_chats]
+
+    df2 = pd.read_excel('relatorio_chatguru_beta.xlsx')
+
+    if len(totais) == len(df2):
+        df2.insert(loc=5, column='Total', value=totais)
+        df2.to_excel('relatorio_chatguru.xlsx', index=False)
+    else:
+        print(f"Erro: {len(totais)} totais, mas {len(df2)} linhas no DataFrame.")
     
-    df['Totais'] = totais
-    df.to_excel('dados_extraidos.xlsx', index=False)
 except WebDriverException as e:
     print("Erro ao coletar dados da conversa e gerar .xlsx")
     print(e)
@@ -156,5 +144,5 @@ except WebDriverException as e:
     print("Stacktrace")
     traceback.print_exc()
 finally:
-    browser.quit()
+    driver.quit()
     sleep(TIME_TO_WAIT)
