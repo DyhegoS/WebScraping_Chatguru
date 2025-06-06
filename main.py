@@ -12,10 +12,6 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 import traceback
 
-# Chrome Options
-# https://peter.sh/experiments/chromium-command-line-switches/
-# Doc Selenium
-# https://selenium-python.readthedocs.io/locating-elements.html
 
 option = webdriver.ChromeOptions()
 option.add_argument(r"--user-data-dir=C:\Users\dyhego.silva\chrome-selenium-profile")
@@ -24,7 +20,7 @@ driver = webdriver.Chrome(options=option)
     
 
 driver.get('https://s17.chatguru.app/')
-TIME_TO_WAIT = 700
+TIME_TO_WAIT = 30
 
 login = driver.find_element(By.ID, 'email')
 password = driver.find_element(By.ID, 'password')
@@ -34,7 +30,7 @@ password.send_keys(my_password)
 driver.find_element(By.CSS_SELECTOR, 'button.FormButton').click()
 
 try:
-    access_users = WebDriverWait(driver, 400).until(
+    access_users = WebDriverWait(driver, 20).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/users"]'))
     )
 
@@ -47,7 +43,7 @@ complete_sheet = []
 
 try:
     # Espera o <tbody> carregar
-    tbody = WebDriverWait(driver, 400).until(
+    tbody = WebDriverWait(driver, 20).until(
         EC.presence_of_element_located((By.TAG_NAME, "tbody"))
     )
 
@@ -93,7 +89,7 @@ except WebDriverException as e:
     traceback.print_exc()
 
 try:
-    access_chats = WebDriverWait(driver, 400).until(
+    access_chats = WebDriverWait(driver, 20).until(
     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="/chats"]'))
     )
 
@@ -103,7 +99,7 @@ except:
 
 
 try:
-    tbody_chats = WebDriverWait(driver, 500).until(
+    tbody_chats = WebDriverWait(driver, 20).until(
         EC.presence_of_element_located((By.TAG_NAME, "tbody"))
     )
 
@@ -127,7 +123,12 @@ try:
     total_chats = [x for x in total_chats if x['Nomes'] not in remove]
 
     total_chats = sorted(total_chats, key=lambda x: x['Nomes'])
-    totais = [item['Conversas Totais'] for item in total_chats]
+    totais = [
+        int(item['Conversas Totais'].replace('.', '').replace(',', '').strip())
+        if item['Conversas Totais'].strip().isdigit()
+        else 0
+        for item in total_chats
+    ]
 
     df2 = pd.read_excel('relatorio_chatguru_beta.xlsx')
 
